@@ -1,5 +1,5 @@
 import express from "express";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import {db} from "./firebase-config.js";
 import {Todo} from "./todo-shema.js";
 import bodyParser from "body-parser";
@@ -56,3 +56,29 @@ app.get("/todos", async (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
+
+app.put("/todos/:id", async (req, res) => {
+  try {
+    const todoId = req.params.id;
+    const todoRef = doc(db, "todos", todoId);
+    await updateDoc(todoRef, {
+      title: req.body.title,
+      description: req.body.description,
+    });
+    res.send("Document has been updated");
+  } catch (e) {
+    console.error("Error updating document: ", e);
+  }
+});
+
+app.delete("/todos/:id", async (req, res) => {
+  try {
+    const todoId = req.params.id;
+    const todoRef = doc(db, "todos", todoId);
+    await deleteDoc(todoRef);
+    res.send("Document has been deleted");
+  } catch (e) {
+    console.error("Error deleting document: ", e);
+  }
+});
