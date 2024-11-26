@@ -1,35 +1,58 @@
 import express from "express";
-import { doc, updateDoc, deleteDoc, collection, addDoc, getDocs } from "firebase/firestore";
-import {db} from "./firebase-config.js";
-import {Todo} from "./todo-shema.js";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
+import { db, auth } from "./firebase-config.js";
+import { Todo } from "./todo-schema.js";
 import bodyParser from "body-parser";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
-const app = express()
-const port = 3000
+const app = express();
+const port = parseInt(process.env.PORT) || 8080;
+console.log(port);
 
-app.use(bodyParser.urlencoded({ extended: false}));
+const checkIfLoggedIn = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ").at(-1);
+  
+  const tokenIsValid = token !== undefined;
+
+  if (tokenIsValid) {
+    next();
+  } else {
+    res.status(401).send("Unauthorized: Please log in first.");
+  }
+};
+
+app.use(bodyParser.urlencoded({ extended: false }));
+
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 const todosCollection = collection(db, "todos");
 
-app.post("/todos", async (req, res) => {
+// Arrow Function
+app.post("/todos", checkIfLoggedIn, async (req, res) => {
   try {
     const todo = new Todo(
       req.body.author,
-      req.body.title,
       req.body.description,
-    );
- 
-    await addDoc(
-      todosCollection,
-      JSON.parse(JSON.stringify(todo)),
+      req.body.title,
     );
 
-    res.send('Document has been saved');
+    await addDoc(todosCollection, JSON.parse(JSON.stringify(todo)));
+
+    res.send("Document has been saved!");
   } catch (e) {
     console.error("Error adding document: ", e);
   }
@@ -51,34 +74,71 @@ app.get("/todos", async (req, res) => {
   }
 });
 
-
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-
-
-app.put("/todos/:id", async (req, res) => {
+// /todos/4zs57ZVKFUOa4RdMhQXK
+app.put("/todos/:todoId", async (req, res) => {
   try {
-    const todoId = req.params.id;
-    const todoRef = doc(db, "todos", todoId);
-    await updateDoc(todoRef, {
-      title: req.body.title,
-      description: req.body.description,
+    const todoId = req.params.todoId;
+    const description = req.body.description;
+    const title = req.body.title;
+
+    const docToUpdate = doc(todosCollection, todoId);
+
+    await updateDoc(docToUpdate, {
+      description: description,
+      title,
     });
-    res.send("Document has been updated");
-  } catch (e) {
-    console.error("Error updating document: ", e);
+
+    res.send("Document has been updated!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Terjadi kesalahan saat mengambil data todos");
   }
 });
 
-app.delete("/todos/:id", async (req, res) => {
+app.delete("/todos/:todoId", async (req, res) => {
   try {
-    const todoId = req.params.id;
-    const todoRef = doc(db, "todos", todoId);
-    await deleteDoc(todoRef);
-    res.send("Document has been deleted");
-  } catch (e) {
-    console.error("Error deleting document: ", e);
+    const todoId = req.params.todoId;
+    const docToDelete = doc(todosCollection, todoId);
+
+    await deleteDoc(docToDelete);
+
+    res.send("Document has been deleted!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Terjadi kesalahan saat menghapus data todos");
   }
+});
+
+app.post("/auth/register", async (req, res) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    await createUserWithEmailAndPassword(auth, email, password);
+
+    res.send("Register success!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error.message);
+  }
+});
+
+app.post("/auth/login", async (req, res) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    const result = await signInWithEmailAndPassword(auth, email, password);
+
+    console.log(result.user);
+
+    res.send(JSON.parse(JSON.stringify(result.user)));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error.message);
+  }
+});
+
+app.listen(port, () => {
+  console.log(`helloworld: listening on port ${port}`);
 });
