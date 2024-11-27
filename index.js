@@ -59,7 +59,7 @@ app.post("/todos", checkIfLoggedIn, async (req, res) => {
 });
 
 // Route untuk mendapatkan semua todos
-app.get("/todos", async (req, res) => {
+app.get("/todos", checkIfLoggedIn, async (req, res) => {
   try {
     const todosCollectionRef = todosCollection;
     const todosSnapshot = await getDocs(todosCollectionRef);
@@ -75,7 +75,7 @@ app.get("/todos", async (req, res) => {
 });
 
 // /todos/4zs57ZVKFUOa4RdMhQXK
-app.put("/todos/:todoId", async (req, res) => {
+app.put("/todos/:todoId", checkIfLoggedIn, async (req, res) => {
   try {
     const todoId = req.params.todoId;
     const description = req.body.description;
@@ -95,7 +95,7 @@ app.put("/todos/:todoId", async (req, res) => {
   }
 });
 
-app.delete("/todos/:todoId", async (req, res) => {
+app.delete("/todos/:todoId", checkIfLoggedIn, async (req, res) => {
   try {
     const todoId = req.params.todoId;
     const docToDelete = doc(todosCollection, todoId);
