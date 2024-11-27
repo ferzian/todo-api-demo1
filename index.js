@@ -8,7 +8,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase-config.js";
-import { Todo } from "./todo-schema.js";
+import { Todo } from "./todo-shema.js";
 import bodyParser from "body-parser";
 import {
   createUserWithEmailAndPassword,
